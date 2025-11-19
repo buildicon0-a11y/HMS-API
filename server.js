@@ -1,71 +1,84 @@
 // server.js
-require('dotenv').config();
-const express = require('express');
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const cors = require('cors');
+require("dotenv").config();
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
 
 const app = express();
 
-// Middleware
+/* ---------------------------------------------------
+   CORS CONFIG
+--------------------------------------------------- */
 app.use(cors({
-  origin: '*'
+  origin: ["http://localhost:3000", "https://your-frontend-domain.com"],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
 }));
 
-// Generic preflight handler
-app.options('*', cors());
+app.options("*", cors()); // Preflight requests
 
-app.use(express.json({ limit: '5mb' }));
+/* ---------------------------------------------------
+   BODY PARSER
+--------------------------------------------------- */
+app.use(express.json({ limit: "5mb" }));
 
-// MongoDB Connection
+/* ---------------------------------------------------
+   DATABASE CONNECTION
+--------------------------------------------------- */
 const connectDB = async () => {
-  const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/hmsdb';
+  const MONGO_URI = process.env.MONGO_URI;
+
   try {
     await mongoose.connect(MONGO_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
-    console.log('✅ MongoDB connected');
-  } catch (error) {
-    console.error('❌ MongoDB connection error:', error);
+    console.log("✅ MongoDB Connected");
+  } catch (err) {
+    console.error("❌ MongoDB Connection Error:", err.message);
     process.exit(1);
   }
 };
 
-// Route Imports
-const registrationRoutes = require('./routes/registrationRoutes');
-const patientRoutes = require('./routes/patientRoutes');
-const authRoutes = require('./routes/authRoutes');
-const engineerVisitRoutes = require('./routes/engineerVisitRoutes');
+/* ---------------------------------------------------
+   ROUTES IMPORT
+--------------------------------------------------- */
+const registrationRoutes = require("./routes/registrationRoutes");
+const patientRoutes = require("./routes/patientRoutes");
+const authRoutes = require("./routes/authRoutes");
+const engineerVisitRoutes = require("./routes/engineerVisitRoutes");
 
-// Mount Routes
-app.use('/api/registrations', registrationRoutes);
-app.use('/api/patients', patientRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/engineer-visits', engineerVisitRoutes);
+/* ---------------------------------------------------
+   ROUTES
+--------------------------------------------------- */
+app.use("/api/registrations", registrationRoutes);
+app.use("/api/patients", patientRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/engineer-visits", engineerVisitRoutes);
 
-// Basic Auth Model
-const User = require('./models/user');
-
-// Error Handler Middleware
-app.use((err, req, res, next) => {
-  console.error('Unhandled Error:', err);
-  res.status(500).json({ message: 'Internal server error' });
+/* ---------------------------------------------------
+   HEALTH CHECK (OPTIONAL)
+--------------------------------------------------- */
+app.get("/", (req, res) => {
+  res.send("HMS API Running...");
 });
 
-// Start Server
+/* ---------------------------------------------------
+   ERROR HANDLER
+--------------------------------------------------- */
+app.use((err, req, res, next) => {
+  console.error("❌ Unhandled Error:", err);
+  res.status(500).json({ message: "Internal Server Error" });
+});
+
+/* ---------------------------------------------------
+   START SERVER
+--------------------------------------------------- */
 const PORT = process.env.PORT || 5000;
 
-// Connect to DB and Start Server
 (async () => {
-  try {
-    await connectDB();
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-    });
-  } catch (err) {
-    console.error('Server failed to start due to DB connection error.');
-    process.exit(1);
-  }
+  await connectDB();
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+  });
 })();
