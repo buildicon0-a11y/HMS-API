@@ -13,8 +13,8 @@ app.use(cors({
   origin: '*'
 }));
 
-// Generic preflight handler
-app.options('*', cors());
+// Generic preflight handler is handled by the global `cors` middleware above.
+// app.options('*', cors()); // removed because newer path-to-regexp rejects `*`
 
 app.use(express.json({ limit: '5mb' }));
 
